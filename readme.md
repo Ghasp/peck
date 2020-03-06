@@ -63,7 +63,6 @@ WHERE
     AND [column] = 'value'
 ```
 
-
 ### Getting Many Rows
 
 SQL is a powerful search language, Peck's search interface is not inteded to replace it. However many common SQL operations are simple enough that they can be represented in a URL's query. Query parameters such as `order`, `limit`, and `offset` allow you to paginate through a tables rows. The `filter` parameter can be used to filter the rows of a table. 
@@ -80,7 +79,7 @@ https://example.com/AdventureWorks/HumanResources/employee?filter=JobTitle~=*Dev
 -- TSQL
 SELECT *
 FROM [AdventureWorks].[HumanResources].[Employee]
-WHERE [JobTitle] LIKE '%Tech%'
+WHERE [JobTitle] LIKE '%Dev%'
 ```
 
 more complex example:
@@ -93,6 +92,7 @@ https://example.com/AdventureWorks/HumanResources/employee
 &limit=2
 &offset=1
 ```
+
 ```sql
 -- TSQL
 SELECT
@@ -114,36 +114,27 @@ FETCH NEXT 10 ROWS ONLY;
 
 #### Filtering
 
+where `k` is the key and `v` is a value.
 
 ##### Comparison Operators
 
-delimit each operand with one of these operators. to search for a `IS NULL` or `IS NOT NULL` value, use the `null` key word. 
+To escape an operator use `\`.
 
 | URL Operator | SQL Operator | Definition                |
 | ------------ | ------------ | ------------------------- |
-| ==           | =            | equals                    |
-| !=           | =            | not equals                |
-| <            | <            | less than                 |
-| >            | >            | greater than              |
-| <=           | <=           | less than or equal too    |
-| >=           | >=           | greater than or equal too |
-| ~=           | LIKE         | wild card equals          |
-| ==null       | IS NULL      | equals null               |
-| !=null       | IS NOT NULL  | not equals null           |
-
-##### Logical Operators
-
-delimit each expression with one of these operators. but keep in mind there is no precedence, so it only make sense to choose one type of operator in each query.
-
-| URL Operator | SQL Operator | Definition       |
-| ------------ | ------------ | ---------------- |
-| ;            | AND          | exclusive search |
-| ,            | OR           | Inclusive search |
-
+| `k`==`v`     | =            | equals                    |
+| `k`!=`v`     | =            | not equals                |
+| `k`<`v`      | <            | less than                 |
+| `k`>`v`      | >            | greater than              |
+| `k`<=`v`     | <=           | less than or equal too    |
+| `k`>=`v`     | >=           | greater than or equal too |
+| `k`~=`v`     | LIKE         | wild card equals          |
+| `k`__        | IS NULL      | equals null               |
+| `k`!_        | IS NOT NULL  | not equals null           |
 
 ##### Wildcards
 
-Used in conjuction with the `~=` operator.
+Used in conjuction with the `~=` operator. To escape an wildcard use `\`.
 
 | Wildcard | Definition                                          |
 | -------- | --------------------------------------------------- |
@@ -152,16 +143,34 @@ Used in conjuction with the `~=` operator.
 | [a-z]    | a range of possible characters in a single position |
 | [abc]    | a list of possible characters in a single position  |
 
+##### Ternary Operators
+
+| URL Operator  | SQL Operator | Definition                       |
+| ------------- | ------------ | -------------------------------- |
+| `k`==`v`<>`v` | BETWEEN      | within a range of the two values |
+
+##### Logical Operators
+
+expressions can be delimited with these operators. Where `e` is a expression.
+
+| URL Operator | SQL Operator | Definition       |
+| ------------ | ------------ | ---------------- |
+| `e`;`e`      | AND          | exclusive search |
+| `e`,`e`      | OR           | Inclusive search |
+| (`e`)        | ( )          | Precedence       |
+
+
 
 ### Inserting and updating Rows
 
 Peck can abstract away inserting or updating data, and simply perform the correct operation on the data you provide it. 
+
 - To perform a insert either provide a JSON object with a new key/value pair that satisfies a unique constraint, or provide a JSON object without satisfying a unique constraint. 
 - To update a row provide a JSON object with key/values that match an existing  unique key/values in the table.
 
 #### insert/update one row
 
-*A PUT request should always identify a single resource*, which makes it perfect for providing an interface that will guarantee a single row is either inserted or updated. This interface requires that you identify the resource within the URL fragment. If this interface does not perform a insert or an update it is considered an error. If an error occurs all changes made during the request will be rolled back. This interface will always return a JSON object that describes either the modification to a row or an error. 
+*A PUT request should always identify a single resource*, which makes it perfect for providing an interface that will guarantee a single row is either inserted or updated. This interface requires that you identify the resource within the URL fragment. If a request to this interface does not result in a insert or an update it is considered an error. If an error occurs all changes made during the request will be rolled back. This interface will always return a JSON object that describes either the modification to a row or an error. 
 
 `PUT /database/schema/table#column=value&column=value`
 
@@ -171,7 +180,7 @@ Peck can abstract away inserting or updating data, and simply perform the correc
 
 #### insert/update many rows
 
-Peck can manage batch insert/updates, however for a row to be updated, the JSON object must contain a key/value that matches an existing unique index, otherwise objects sent to this interface will always be inserted. If this interface does not perform a insert or an update it is considered an error. If an error occurs all changes made during the request will be rolled back. This interface will always return a JSON object that describes either the modifications to a row or an error.
+Peck can manage batch insert/updates, however for a row to be updated, the JSON object must contain a key/value that matches an existing unique index, otherwise it will be inserted. If a request to this interface does not result in a insert or an update it is considered an error. If an error occurs all changes made during the request will be rolled back. This interface will always return a JSON object that describes either the modifications to a row or an error.
 
 `POST /database/schema/table`
 
@@ -220,3 +229,24 @@ For windows you will need to install `git` which comes with to openssl.
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout server.key -out server.crt -subj '/CN=peck'
 ```
+
+
+
+
+## Why Fragments?
+
+Peck uses the URI *path* to identify all the rows in a table e.g. `/database/schema/table`. The URI *query* to filter the rows in the table. And the URI *fragment* to uniquely identify a row in a table.
+
+**Why use the URI fragment to identify a row?**
+
+Accourding to the URI [rfc3986](https://tools.ietf.org/html/rfc3986), fragments are used to identify a "secondary resource" (a row) which can be a subset of the "primary recourse" (a table). Since SQL tables are capable of being uniquely indexed by multiple columns and those columns can be named almost anything, the URI path can not naturally contain all that data. The URI fragment is intended to identify an existing resource within the primary resource and can store arbitrary data about that secondary resource to identify it.
+
+If SQL table enforces a single primary key with a revered column name (like many other nosql databases do) then a row could be referenced with a URL path like `/database/schema/table/id`. unfortunately this is not the case. instead a row in a sql database must be identifies with an array of key/value pairs e.g `/database/schema/table#key=value&key=value`.
+
+**Why not use the URI query?** 
+
+The URI query is not intended to uniquely identify a secondary resouce, it is used to store arbitrary data that further describes the primary resouce. while it could be used to identify a secondary resource, this does not seem to be its *only* purpose. Which is why Peck uses it to filter the rows in a table and not uniquely identify a single row.
+
+**But arn't URI fragments not handled by servers when browsing the web?**
+
+Its important to keep in mind that URI's are used for all sorts of things not just web browsers. So applying web browers rules to a REST API will not always make sense, especially when web browers arent going to be the main clients using the API. but for the record, the fragment part of a URI is usually sent to servers from a web brower, but most servers just choose to ignore it.

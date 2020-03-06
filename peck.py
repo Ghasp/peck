@@ -10,17 +10,18 @@ import sys
 
 routes = web.RouteTableDef()
 default_primary_key_column_name = 'id'
+server = ''
 
 # provides a interface for sending sql querys to retrieve json data.
 # any changes to the database will not stick and will be rolled back.
-@routes.post('/{server}/{database}/query')
+@routes.post('/{database}/query')
 async def query_database(request):
     log = {
         "error": ""
     }
 
     try:
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         username, password = decode_basic_atuh(
             request.headers["Authorization"])
@@ -46,7 +47,7 @@ async def query_database(request):
 
 # provides a interface for executing changes to data with sql.
 # if an error is encountered all changes will roll back.
-@routes.post('/{server}/{database}/exec')
+@routes.post('/{database}/exec')
 async def exec_database(request):
     log = {
         "modified": 0,
@@ -54,7 +55,7 @@ async def exec_database(request):
     }
 
     try:
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         username, password = decode_basic_atuh(
             request.headers["Authorization"])
@@ -80,15 +81,15 @@ async def exec_database(request):
     )
 
 
-@routes.get('/{server}/{database}/{schema}/{table}/{column}/{value}')
-@routes.get('/{server}/{database}/{schema}/{table}')
+@routes.get('/{database}/{schema}/{table}/{column}/{value}')
+@routes.get('/{database}/{schema}/{table}')
 async def get_row(request):
     log = {
         "error": ""
     }
 
     try:
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         schema = request.match_info.get('schema')
         table = request.match_info.get('table')
@@ -121,14 +122,14 @@ async def get_row(request):
 
 # this is useful for getting all rows with a specified foreign key.
 # this will always return an array.
-@routes.get('/{server}/{database}/{schema}/{table}/join')
+@routes.get('/{database}/{schema}/{table}/join')
 async def get_row_by_foriegn_key(request):
     log = {
         "error": ""
     }
 
     try:
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         schema = request.match_info.get('schema')
         table = request.match_info.get('table')
@@ -161,7 +162,7 @@ async def get_row_by_foriegn_key(request):
     )
 
 
-@routes.put('/{server}/{database}/{schema}/{table}')
+@routes.put('/{database}/{schema}/{table}')
 async def set_table_row(request):
     log = {
         "modified": 0,
@@ -170,7 +171,6 @@ async def set_table_row(request):
 
     try:
         rows = await request.text()
-        server = request.match_info.get('server')
         database = request.match_info.get('database')
         schema = request.match_info.get('schema')
         table = request.match_info.get('table')
@@ -195,7 +195,7 @@ async def set_table_row(request):
     return web.Response(body=json.dumps(log))
 
 
-@routes.post('/{server}/{database}/{schema}/{table}')
+@routes.post('/{database}/{schema}/{table}')
 async def set_table_rows(request):
     log = {
         "modified": 0,
@@ -204,7 +204,7 @@ async def set_table_rows(request):
 
     try:
         rows = await request.text()
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         schema = request.match_info.get('schema')
         table = request.match_info.get('table')
@@ -233,7 +233,7 @@ async def set_table_rows(request):
     return web.Response(body=json.dumps(log))
 
 
-@routes.delete('/{server}/{database}/{schema}/{table}')  # ?column=value
+@routes.delete('/{database}/{schema}/{table}')  # ?column=value
 async def delete_table_row(request):
     log = {
         "deleted": 0,
@@ -241,7 +241,7 @@ async def delete_table_row(request):
     }
 
     try:
-        server = request.match_info.get('server')
+        
         database = request.match_info.get('database')
         schema = request.match_info.get('schema')
         table = request.match_info.get('table')
