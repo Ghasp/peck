@@ -1,5 +1,6 @@
 import base64
 import binascii
+import os
 
 def decode_basic_atuh(auth_header: str, encoding: str = 'latin1') -> tuple:
     try:
@@ -27,3 +28,7 @@ def decode_basic_atuh(auth_header: str, encoding: str = 'latin1') -> tuple:
         raise ValueError('Invalid credentials.')
 
     return (username, password)
+
+
+def test_path(file_path):
+    return os.path.exists(file_path)

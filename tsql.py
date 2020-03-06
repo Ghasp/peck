@@ -83,17 +83,22 @@ def to_update(schema: str, table: str, row: dict, wheres: dict) -> str:
     return stmt
 
 
-# IF EXISTS ( SELECT * FROM dbo.AccountDetails WITH (UPDLOCK) WHERE Email = @Email ) BEGIN
-#
-#      UPDATE dbo.AccountDetails
-#         SET Etc = @Etc
-#       WHERE Email = @Email;
-#
-# END ELSE BEGIN
-#
-#      INSERT dbo.AccountDetails ( Email, Etc )
-#      VALUES ( @Email, @Etc );
-# END
+def to_delete(schema: str, table: str, wheres: dict) -> str:
+    full_table_name = '[{}].[{}]'.format(schema, table)
+    stmt = "DELETE FROM {}".format(full_table_name)
+    if wheres:
+        keys = list(wheres.keys())
+        stmt = stmt + " WHERE "
+        for i in range(len(keys)):
+            column = keys[i]
+            value = wheres[column]
+            if i > 0:
+                stmt = stmt + " AND "
+            stmt = stmt + "[" + column + "] = '" + \
+                escape_string(str(value)) + "'"
+    stmt = stmt + ';'
+    return stmt
+
 
 def to_upsert(schema: str, table: str, pks: list, row: dict) -> str:
 
@@ -101,7 +106,7 @@ def to_upsert(schema: str, table: str, pks: list, row: dict) -> str:
 
     wheres = {}
     for column in row:
-        if str(column).lower() in pks:
+        if str(column) in pks:
             wheres.update({column: row[column]})
 
     if not wheres:
@@ -160,3 +165,10 @@ def to_upsert(schema: str, table: str, pks: list, row: dict) -> str:
 # )
 # print(upsert_stmt)
 #
+#   stmt = to_delete(
+#       schema='dbo',
+#       table='test',
+#       wheres={"id": "123","fn": "Jacob","ln": "Ochoa"}
+#   )
+#   print(stmt)
+#   
