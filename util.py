@@ -2,6 +2,7 @@ import base64
 import binascii
 import os
 
+
 def decode_basic_atuh(auth_header: str, encoding: str = 'latin1') -> tuple:
     try:
         auth_type, encoded_credentials = auth_header.split(' ', 1)
@@ -32,3 +33,12 @@ def decode_basic_atuh(auth_header: str, encoding: str = 'latin1') -> tuple:
 
 def test_path(file_path):
     return os.path.exists(file_path)
+
+
+def request_basic_auth():
+    return web.Response(
+        status=401,
+        headers={
+            "WWW-Authenticate": "Basic realm=\"please provide a valid sql username and password\"."
+        }
+    )
