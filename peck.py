@@ -21,7 +21,13 @@ import re
 
 
 routes = web.RouteTableDef()
-server = os.environ['PECK_DB_SERVER']
+server = ""
+try:
+    server = os.environ['PECK_DB_SERVER']
+except:
+    pass
+if server == None:
+    server = 'localhost'
 
 
 @routes.get("/")
@@ -425,4 +431,4 @@ if __name__ == '__main__':
     app = web.Application()
     app.router.add_routes(routes)
     #web.run_app(app, ssl_context=ssl_context, port=443)
-    web.run_app(app, port=80)
+    web.run_app(app)
