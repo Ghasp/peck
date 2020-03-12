@@ -1,7 +1,4 @@
 
-# python stuff
-__pycache__
-
-*.key
-*.crt
+# dev stuff
 test.*
+*.test.*
