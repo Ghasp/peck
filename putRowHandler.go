@@ -30,7 +30,7 @@ func putRowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	where := make(map[string]string, 0)
-	if key, ok := url["key"]; ok {
+	if key, ok := url["key"]; ok && PRIMARYKEY != "" {
 		where[PRIMARYKEY] = key
 	} else {
 		for k, v := range r.URL.Query() {

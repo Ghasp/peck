@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getRowHandler(w http.ResponseWriter, r *http.Request) {
+func getRowsHandler(w http.ResponseWriter, r *http.Request) {
 	url := mux.Vars(r)
 	schema := url["schema"]
 	table := url["table"]
@@ -24,19 +24,15 @@ func getRowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	where := make(map[string]string, 0)
-	if key, ok := url["key"]; ok && PRIMARYKEY != "" {
-		where[PRIMARYKEY] = key
-	} else {
-		for k, v := range r.URL.Query() {
-			where[k] = v[0]
-		}
+	for k, v := range r.URL.Query() {
+		where[k] = v[0]
 	}
 	if len(where) < 1 {
-		http.Error(w, `row index not specified`, http.StatusBadRequest)
+		http.Error(w, `rows index not specified`, http.StatusBadRequest)
 		return
 	}
 
-	data, err := getRowJSON(CONNECTION, toSelect(DATABASE, schema, table, nil, where, true))
+	data, err := getDataJSON(CONNECTION, toSelect(DATABASE, schema, table, nil, where, true))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

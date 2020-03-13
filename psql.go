@@ -213,6 +213,26 @@ func toSelect(database, schema, table string, columns []string, where map[string
 	return stmt.String()
 }
 
+func toDelete(database, schema, table string, where map[string]string) string {
+	var stmt bytes.Buffer
+	stmt.WriteString(fmt.Sprintf(`DELETE FROM "%s"."%s"."%s"`, database, schema, table))
+
+	if len(where) > 0 {
+		stmt.WriteString(" WHERE")
+		var i uint
+		for k, v := range where {
+			if i > 0 {
+				stmt.WriteString(fmt.Sprintf(`AND "%s" = '%s'`, k, v))
+			} else {
+				stmt.WriteString(fmt.Sprintf(`"%s" = '%s'`, k, v))
+			}
+			i++
+		}
+	}
+	stmt.WriteString(";")
+	return stmt.String()
+}
+
 //
 // INSERT INTO distributors (did, dname)
 // VALUES (5, 'Gizmo Transglobal'), (6, 'Associated Computing, Inc')
@@ -303,6 +323,26 @@ func getRowJSON(db *sql.DB, sql string) (string, error) {
 }
 
 func setData(db *sql.DB, sql string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(sql)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func remData(db *sql.DB, sql string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err

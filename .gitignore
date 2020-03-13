@@ -2,3 +2,5 @@
 # dev stuff
 test.*
 *.test.*
+.exe
+peck
