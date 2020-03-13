@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -49,8 +51,26 @@ func main() {
 
 	// RUN HTTP SERVER
 	if TLSCERTPATH != "" && TLSKEYPATH != "" {
-		http.ListenAndServeTLS(":443", TLSCERTPATH, TLSKEYPATH, r)
+		cfg := &tls.Config{
+			MinVersion:               tls.VersionTLS12,
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			PreferServerCipherSuites: true,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			},
+		}
+		srv := &http.Server{
+			Addr:         ":443",
+			Handler:      r,
+			TLSConfig:    cfg,
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		}
+		log.Fatal(srv.ListenAndServeTLS(TLSCERTPATH, TLSKEYPATH))
+		//http.ListenAndServeTLS(":443", TLSCERTPATH, TLSKEYPATH, r)
 	} else {
-		http.ListenAndServe(":80", r)
+		log.Fatal(http.ListenAndServe(":80", r))
 	}
 }
